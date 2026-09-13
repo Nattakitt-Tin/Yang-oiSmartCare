@@ -1,0 +1,131 @@
+/* base.css — โทนสี ธีมสว่าง/มืด ปุ่ม และองค์ประกอบพื้นฐานที่ใช้ร่วมกันทุกหน้า */
+:root{
+  color-scheme:light;
+  --olive:#7f8455; --olive-dark:#5f6540; --olive-head:#8d8e6e; --olive-head-2:#a5a48b;
+  --cream:#faf8f2; --cream-2:#f2efe6;
+  --surface:#fff; --surface-2:#fdfdfa; --hover:#fbfaf5; --hint-bg:#fdfcf6;
+  --ink:#33332e; --ink-2:#5b5b52; --muted:#8a8a80;
+  --line:#d9d7cc; --track:#e3e1da; --rule:#3f3f38; --info-line:#dedbd0;
+  --red:#b8392c; --amber:#e2a13b; --green:#6f7d4c; --amber-txt:#c8891f;
+  --danger-bg:#fbf1f0; --danger-line:#e3c3bf;
+  --on-olive:#fff; --disabled:#c6c5b8; --on-disabled:#fff;
+  --shadow:rgba(0,0,0,.14);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --olive:#98a067; --olive-dark:#aeb87c; --olive-head:#5f6448; --olive-head-2:#6b7052;
+  --cream:#23241d; --cream-2:#191a14;
+  --surface:#2b2d24; --surface-2:#2f3128; --hover:#343629; --hint-bg:#262820;
+  --ink:#eae8dd; --ink-2:#bab8aa; --muted:#8d8b7e;
+  --line:#3d3f34; --track:#383a2f; --rule:#6d6f5f; --info-line:#3d3f34;
+  --red:#e8796b; --amber:#e9b45f; --green:#a6bd73; --amber-txt:#e9b45f;
+  --danger-bg:#3a2724; --danger-line:#5c3b36;
+  --on-olive:#1b1c15; --disabled:#3a3c31; --on-disabled:#7c7b70;
+  --shadow:rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:'Sarabun','IBM Plex Sans Thai','Noto Sans Thai','Sukhumvit Set',
+              -apple-system,'Helvetica Neue',Tahoma,sans-serif;
+  background:var(--cream-2); color:var(--ink); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit}
+
+/* ================= WIZARD (เต็มหน้า) ================= */
+#wizard{min-height:100vh; display:flex; flex-direction:column; align-items:center;
+        padding:0 20px 40px}
+.wz{width:100%; max-width:760px; display:flex; flex-direction:column; min-height:100vh}
+
+.wz-top{padding:34px 0 0; text-align:center}
+.wz-org{font-size:14px; letter-spacing:.02em; color:var(--muted); font-weight:600}
+.progress{display:flex; gap:6px; margin:22px 0 0}
+.progress i{flex:1; height:5px; border-radius:99px; background:var(--track); transition:.25s}
+.progress i.done{background:var(--olive-head)}
+.progress i.now{background:var(--olive)}
+.wz-count{margin-top:9px; font-size:13.5px; color:var(--muted); text-align:left}
+
+.wz-body{flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding:40px 0 30px}
+.wz-title{font-size:34px; font-weight:800; line-height:1.25; margin:0 0 6px; letter-spacing:-.4px}
+.wz-sub{margin:0 0 30px; color:var(--muted); font-size:16px}
+
+/* ---- ข้อมูลผู้รับบริการ ---- */
+.grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px}
+.field label{display:block; font-size:14px; font-weight:600; margin-bottom:6px; color:var(--ink-2)}
+.field input,.field select{
+  width:100%; padding:13px 14px; font-size:16px; border:1px solid var(--line);
+  border-radius:10px; background:var(--surface); color:var(--ink);
+}
+.field input:focus,.field select:focus{outline:2px solid #cfd3b6; outline-offset:1px; border-color:var(--olive)}
+.field .sub{font-size:12.5px; color:var(--muted); margin-top:5px}
+
+.scalecard{
+  margin-top:26px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 20px;
+}
+.scalecard h4{margin:0 0 8px; font-size:14.5px; font-weight:700}
+.scalecard ul{margin:0; padding-left:20px; font-size:14px; color:var(--ink-2)}
+.scalecard li{margin:3px 0}
+.scalecard li b{color:var(--ink)}
+
+/* ---- คำถาม ---- */
+.q{padding:20px 0; border-top:1px solid var(--line)}
+.q:first-child{border-top:0; padding-top:4px}
+.qt{font-size:18px; font-weight:600; margin-bottom:14px; line-height:1.45}
+.qt i{font-style:normal; color:var(--olive); font-weight:800; margin-right:9px}
+.opts{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px}
+.opt{position:relative}
+.opt input{position:absolute; opacity:0; inset:0; cursor:pointer}
+.opt span{
+  display:block; text-align:center; padding:12px 8px; border:1px solid var(--line);
+  border-radius:10px; font-size:12.5px; line-height:1.35; cursor:pointer;
+  background:var(--surface); color:var(--ink-2); transition:.12s;
+}
+.opt span b{display:block; font-size:14.5px; color:var(--ink); margin-bottom:1px}
+.opt input:hover + span{border-color:var(--olive-head); background:var(--hover)}
+.opt input:checked + span{background:var(--olive); border-color:var(--olive); color:var(--on-olive)}
+.opt input:checked + span b{color:var(--on-olive)}
+.opt input:focus-visible + span{outline:2px solid #cfd3b6; outline-offset:2px}
+
+/* ---- nav ---- */
+.wz-nav{display:flex; align-items:center; gap:14px; padding:20px 0 0; border-top:1px solid var(--line)}
+.wz-nav .left{font-size:13.5px; color:var(--muted)}
+.wz-nav .sp{margin-left:auto}
+.btn{
+  padding:13px 26px; border-radius:10px; border:1px solid var(--olive);
+  background:var(--olive); color:var(--on-olive); font-size:16px; font-weight:700; cursor:pointer;
+}
+.btn:hover{background:var(--olive-dark); border-color:var(--olive-dark)}
+.btn:disabled{background:var(--disabled); border-color:var(--disabled); color:var(--on-disabled); cursor:not-allowed}
+.btn.ghost{background:transparent; color:var(--ink-2); border-color:var(--line)}
+.btn.ghost:hover{background:var(--surface); color:var(--ink)}
+.btn.sm{padding:8px 15px; font-size:14px; border-radius:8px}
+.btn.danger{background:var(--surface); color:var(--red); border-color:var(--danger-line)}
+.btn.danger:hover{background:var(--danger-bg)}
+
+/* gear */
+#fabs{position:fixed; right:18px; bottom:18px; z-index:120;
+       display:flex; flex-direction:column-reverse; gap:10px}
+#fabs button{
+  width:46px; height:46px; border-radius:50%; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink-2); font-size:19px; cursor:pointer;
+  box-shadow:0 3px 12px var(--shadow); line-height:1;
+}
+#fabs button:hover{background:var(--hover); color:var(--ink)}
+
+/* ---- ทั่วไป ---- */
+.hidden{display:none !important}
+.muted{color:var(--muted)}
+.tag{font-size:12px; font-weight:600; padding:2px 10px; border-radius:99px; background:var(--cream-2); color:var(--ink-2)}
+.tag.g{background:var(--green); color:#fff} .tag.y{background:var(--amber); color:#1b1c15} .tag.r{background:var(--red); color:#fff}
+.toast{
+  position:fixed; left:50%; bottom:84px; transform:translateX(-50%); z-index:200;
+  background:var(--ink); color:var(--cream); padding:10px 18px; border-radius:10px; font-size:14px;
+  box-shadow:0 6px 24px var(--shadow); opacity:0; transition:.25s; pointer-events:none;
+}
+.toast.on{opacity:1}
+@media screen and (max-width:900px){
+  .grid,.cols2,.cols3{grid-template-columns:1fr}
+  .opts{grid-template-columns:repeat(2,1fr)}
+  .wz-title{font-size:27px}
+}

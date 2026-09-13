@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบจัดการ — แบบประเมินสมดุลองค์รวม</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<link rel="stylesheet" href="../assets/sheet.css">
+<link rel="stylesheet" href="../assets/editor.css">
+<style>
+body{font-size:15px}
+.nav{position:sticky; top:0; z-index:50; background:var(--surface); border-bottom:1px solid var(--line);
+     padding:0 22px; display:flex; align-items:center; gap:4px; height:58px}
+.nav .brand{font-weight:800; font-size:15.5px; margin-right:18px; white-space:nowrap}
+.nav .brand small{display:block; font-weight:500; font-size:11px; color:var(--muted); line-height:1.1}
+.nav a{padding:8px 13px; border-radius:8px; color:var(--ink-2); text-decoration:none; font-size:14.5px; font-weight:600}
+.nav a.on{background:var(--cream-2); color:var(--ink)}
+.nav a:hover{color:var(--ink)}
+.nav .sp{margin-left:auto}
+.nav .who{font-size:13px; color:var(--muted); margin-right:8px; text-align:right; line-height:1.2}
+.nav .who b{display:block; color:var(--ink-2)}
+.main{max-width:1120px; margin:0 auto; padding:26px 22px 90px}
+h1.pg{margin:0 0 4px; font-size:26px; font-weight:800}
+p.pgsub{margin:0 0 22px; color:var(--muted)}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:16px}
+.card h3{margin:0 0 12px; font-size:15.5px; font-weight:800}
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:16px}
+.kpi{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 18px}
+.kpi .l{font-size:12.5px; color:var(--muted); font-weight:600}
+.kpi .v{font-size:30px; font-weight:800; line-height:1.15; margin-top:2px}
+.kpi .v small{font-size:13px; font-weight:600; color:var(--muted); margin-left:4px}
+.two{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+@media (max-width:860px){ .two{grid-template-columns:1fr} .nav .who{display:none} }
+.hbar{display:grid; grid-template-columns:150px 1fr 48px; gap:10px; align-items:center; font-size:13.5px; padding:5px 0}
+.hbar .t{height:10px; background:var(--track); border-radius:6px; overflow:hidden}
+.hbar .t i{display:block; height:100%; border-radius:6px}
+.hbar .n{text-align:right; font-weight:700; font-variant-numeric:tabular-nums}
+.stack{display:flex; height:16px; border-radius:8px; overflow:hidden; background:var(--track); margin:6px 0 10px}
+.stack i{display:block; height:100%}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:13.5px}
+.legend span::before{content:''; display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; background:var(--c)}
+.bg-green{background:var(--green)} .bg-amber{background:var(--amber)} .bg-red{background:var(--red)}
+svg.series{width:100%; height:150px; display:block}
+svg.series rect{fill:var(--olive)} svg.series rect:hover{fill:var(--olive-dark)}
+svg.series text{font-size:10px; fill:var(--muted); font-family:inherit}
+svg.series line{stroke:var(--line)}
+table.tbl{width:100%; border-collapse:collapse; font-size:14px}
+table.tbl th{text-align:left; font-size:12.5px; color:var(--muted); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--line)}
+table.tbl td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle}
+table.tbl tr:hover td{background:var(--hover)}
+table.tbl td.num{text-align:right; font-variant-numeric:tabular-nums}
+table.tbl a{color:var(--olive-dark); font-weight:700; text-decoration:none}
+.filters{display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:14px}
+.filters .field{min-width:150px}
+.filters .field label{font-size:12.5px}
+.filters input,.filters select{padding:9px 11px; font-size:14px}
+.pager{display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:12px; font-size:13.5px; color:var(--muted)}
+.auth{max-width:420px; margin:10vh auto 0; padding:0 20px}
+.auth .card{padding:26px 28px}
+.auth h1{margin:0 0 4px; font-size:22px}
+.auth p{margin:0 0 18px; color:var(--muted); font-size:14px}
+.auth .field{margin-bottom:12px}
+.err{color:var(--red); font-size:13.5px; font-weight:600; min-height:18px; margin:4px 0 10px}
+.savebar{position:sticky; top:58px; z-index:20; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+         padding:10px 16px; display:flex; gap:12px; align-items:center; margin-bottom:16px}
+.savebar .dirty{color:var(--amber-txt); font-weight:700; font-size:14px}
+.savebar .sp{margin-left:auto}
+.mini{width:70px; height:6px; background:var(--track); border-radius:4px; display:inline-block; vertical-align:middle; overflow:hidden; margin-right:6px}
+.mini i{display:block; height:100%; background:var(--red)}
+.field label{display:block; font-size:13.5px; font-weight:600; margin-bottom:5px; color:var(--ink-2)}
+.field input,.field select{width:100%; padding:11px 13px; font-size:15px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--ink)}
+.field input:focus,.field select:focus{outline:2px solid #cfd3b6; outline-offset:1px; border-color:var(--olive)}
+.empty{text-align:center; color:var(--muted); padding:40px 0}
+.sheetwrap{padding:0 0 40px}
+</style>
+</head>
+<body>
+
+<div class="nav no-print" id="nav" style="display:none">
+  <div class="brand">ระบบจัดการ<small>แบบประเมินสมดุลองค์รวม</small></div>
+  <a href="#/dashboard" data-nav="dashboard">แดชบอร์ด</a>
+  <a href="#/results" data-nav="results">ผลการประเมิน</a>
+  <a href="#/settings" data-nav="settings" data-admin>ตั้งค่าแบบประเมิน</a>
+  <a href="#/users" data-nav="users" data-admin>ผู้ใช้</a>
+  <div class="sp"></div>
+  <div class="who"><b id="whoName"></b><span id="whoRole"></span></div>
+  <a href="#/account" data-nav="account" title="บัญชีของฉัน">บัญชี</a>
+  <a href="#" id="logout">ออกจากระบบ</a>
+</div>
+
+<div id="app"></div>
+<div id="fabs" class="no-print"><button id="theme" type="button" title="สลับเป็นโหมดมืด">☾</button></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { mergeCfg } from '../assets/core.js';
+import { sheetHTML, esc } from '../assets/sheet.js';
+import { mountEditor } from '../assets/editor.js';
+
+const $ = id => document.getElementById(id);
+const app = $('app');
+let USER=null;
+
+/* ---------- ธีม ---------- */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try{ localStorage.setItem('sk_theme', t) }catch{}
+  $('theme').textContent = t==='dark' ? '☀' : '☾';
+}
+let savedTheme=null; try{ savedTheme=localStorage.getItem('sk_theme') }catch{}
+applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+$('theme').onclick = ()=> applyTheme(document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2800); }
+
+/* ---------- API ---------- */
+async function api(path, opt={}){
+  const r = await fetch('../api/admin/'+path, {
+    method: opt.method||'GET',
+    headers: opt.body ? {'content-type':'application/json'} : {},
+    body: opt.body ? JSON.stringify(opt.body) : undefined
+  });
+  let d; try{ d = await r.json(); }catch{ d={ok:false, error:'ปลายทางตอบกลับผิดรูปแบบ'} }
+  if(r.status===401 && !opt.noRedirect){ USER=null; location.hash='#/login'; }
+  if(!d.ok) throw new Error(d.error||('HTTP '+r.status));
+  return d;
+}
+
+/* ---------- Router ---------- */
+const views = {};
+function navigate(){ route(); }
+window.addEventListener('hashchange', navigate);
+
+async function route(){
+  const hash = location.hash || '#/dashboard';
+  const [_, name, ...rest] = hash.split('/');
+  if(!USER && !['login','setup'].includes(name)){
+    try{ USER=(await api('me',{noRedirect:true})).user; }
+    catch{
+      const s = await api('setup',{noRedirect:true}).catch(()=>({needed:false}));
+      location.hash = s.needed ? '#/setup' : '#/login'; return;
+    }
+  }
+  $('nav').style.display = USER ? 'flex' : 'none';
+  if(USER){
+    $('whoName').textContent = USER.name||USER.email;
+    $('whoRole').textContent = USER.role==='admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่';
+    document.querySelectorAll('[data-admin]').forEach(a=>a.style.display = USER.role==='admin'?'':'none');
+    document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('on', a.dataset.nav===name));
+  }
+  const fn = views[name] || views.dashboard;
+  app.innerHTML='';
+  try{ await fn(rest); }catch(err){ app.innerHTML=`<div class="main"><div class="card err">${esc(err.message)}</div></div>`; }
+  window.scrollTo(0,0);
+}
+
+$('logout').onclick = async e=>{ e.preventDefault(); await api('logout',{method:'POST',body:{}}); USER=null; location.hash='#/login'; };
+
+const h = (html) => { const d=document.createElement('div'); d.innerHTML=html; return d; };
+const fmtDT = iso => { const d=new Date(iso); return d.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}) };
+const tierCls = k => k==='green'?'g':k==='yellow'?'y':'r';
+
+/* ---------- Login / Setup ---------- */
+function authForm({title, sub, fields, button, onSubmit}){
+  const el = h(`<div class="auth"><div class="card">
+    <h1>${title}</h1><p>${sub}</p>
+    <form>${fields.map(f=>`<div class="field"><label>${f.label}</label><input name="${f.name}" type="${f.type||'text'}" ${f.attrs||''}></div>`).join('')}
+    <div class="err" id="authErr"></div>
+    <button class="btn" type="submit" style="width:100%">${button}</button></form>
+  </div></div>`);
+  el.querySelector('form').onsubmit = async e=>{
+    e.preventDefault();
+    const fd = Object.fromEntries(new FormData(e.target).entries());
+    const errEl = el.querySelector('#authErr'); errEl.textContent='';
+    const btn = e.target.querySelector('button'); btn.disabled=true;
+    try{ await onSubmit(fd); }catch(err){ errEl.textContent=err.message; btn.disabled=false; }
+  };
+  app.appendChild(el);
+  el.querySelector('input').focus();
+}
+
+views.login = async ()=>{
+  authForm({title:'เข้าสู่ระบบ', sub:'สำหรับเจ้าหน้าที่คลินิกเท่านั้น',
+    fields:[{label:'อีเมล',name:'email',type:'email',attrs:'required autocomplete="username"'},
+            {label:'รหัสผ่าน',name:'password',type:'password',attrs:'required autocomplete="current-password"'}],
+    button:'เข้าสู่ระบบ',
+    onSubmit: async fd=>{ const d=await api('login',{method:'POST',body:fd,noRedirect:true}); USER=d.user; location.hash='#/dashboard'; }
+  });
+};
+
+views.setup = async ()=>{
+  const s = await api('setup',{noRedirect:true});
+  if(!s.needed){ location.hash='#/login'; return; }
+  authForm({title:'ตั้งค่าครั้งแรก', sub:'สร้างบัญชีผู้ดูแลระบบคนแรก ทำได้ครั้งเดียว',
+    fields:[{label:'ชื่อ',name:'name',attrs:'required'},
+            {label:'อีเมล',name:'email',type:'email',attrs:'required'},
+            {label:'รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)',name:'password',type:'password',attrs:'required minlength="8" autocomplete="new-password"'}],
+    button:'สร้างบัญชีและเข้าสู่ระบบ',
+    onSubmit: async fd=>{ const d=await api('setup',{method:'POST',body:fd,noRedirect:true}); USER=d.user; location.hash='#/dashboard'; }
+  });
+};
+
+/* ---------- Dashboard ---------- */
+views.dashboard = async ()=>{
+  const s = await api('stats');
+  const maxN = Math.max(1, ...s.series.map(x=>x.n));
+  const W=600, H=130, bw=W/30;
+  const bars = s.series.map((x,i)=>`<rect x="${(i*bw+1).toFixed(1)}" y="${(H-(x.n/maxN)*(H-16)).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${((x.n/maxN)*(H-16)).toFixed(1)}" rx="2"><title>${x.date}: ${x.n} รายการ</title></rect>`).join('');
+  const labels = [0,7,14,21,29].map(i=>`<text x="${(i*bw+bw/2).toFixed(1)}" y="${H+12}" text-anchor="middle">${s.series[i].date.slice(5).replace('-','/')}</text>`).join('');
+  const totalT = Math.max(1, s.tiers.reduce((a,t)=>a+t.n,0));
+  const el = h(`<div class="main">
+    <h1 class="pg">แดชบอร์ด</h1><p class="pgsub">ภาพรวมผลการประเมิน · คำนวณค่าเฉลี่ยจาก ${s.sampleSize.toLocaleString('th-TH')} รายการล่าสุด</p>
+    <div class="kpis">
+      <div class="kpi"><div class="l">วันนี้</div><div class="v">${s.today}</div></div>
+      <div class="kpi"><div class="l">7 วันล่าสุด</div><div class="v">${s.week}</div></div>
+      <div class="kpi"><div class="l">30 วันล่าสุด</div><div class="v">${s.month}</div></div>
+      <div class="kpi"><div class="l">ทั้งหมด</div><div class="v">${s.total.toLocaleString('th-TH')}</div></div>
+      <div class="kpi"><div class="l">คะแนนสมดุลเฉลี่ย</div><div class="v">${s.avgBalance??'—'}<small>/ 100</small></div></div>
+    </div>
+    <div class="card"><h3>จำนวนการประเมินรายวัน (30 วัน)</h3>
+      <svg class="series" viewBox="0 0 ${W} ${H+16}" preserveAspectRatio="none"><line x1="0" y1="${H}" x2="${W}" y2="${H}"/>${bars}${labels}</svg></div>
+    <div class="two">
+      <div class="card"><h3>สัดส่วนกลุ่มเสี่ยง</h3>
+        <div class="stack">${s.tiers.map(t=>`<i class="bg-${t.color}" style="width:${t.n/totalT*100}%" title="${esc(t.label)} ${t.n}"></i>`).join('')}</div>
+        <div class="legend">${s.tiers.map(t=>`<span style="--c:var(--${t.color})">${esc(t.label)} · <b>${t.n}</b> (${Math.round(t.n/totalT*100)}%)</span>`).join('')}</div>
+      </div>
+      <div class="card"><h3>คะแนนเฉลี่ยรายหมวด (% ของคะแนนเต็ม)</h3>
+        ${s.domains.map(d=>`<div class="hbar"><span>${esc(d.name)}</span><div class="t"><i class="${d.avgPct>72?'bg-red':d.avgPct>38?'bg-amber':'bg-green'}" style="width:${d.avgPct}%"></i></div><span class="n">${d.avgPct}%</span></div>`).join('')}
+        <h3 style="margin-top:16px">สภาวะธาตุ ๔ เฉลี่ย</h3>
+        ${s.elements.map(d=>`<div class="hbar"><span>${esc(d.name)}</span><div class="t"><i class="${d.avgPct>74?'bg-red':d.avgPct>24?'bg-amber':'bg-green'}" style="width:${d.avgPct}%"></i></div><span class="n">${d.avgPct}%</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="card"><h3>ปัญหาที่พบบ่อย เรียงตามคะแนนเฉลี่ยรายข้อ</h3>
+      <table class="tbl"><thead><tr><th>ข้อ</th><th>คำถาม</th><th class="num">เฉลี่ย</th><th>ตอบระดับสูงสุด</th></tr></thead><tbody>
+      ${[...s.questions].sort((a,b)=>b.avg-a.avg).map(q=>`<tr><td>${q.i}</td><td>${esc(q.text)}</td><td class="num"><b>${q.avg}</b></td><td><span class="mini"><i style="width:${q.highPct}%"></i></span>${q.highPct}%</td></tr>`).join('')}
+      </tbody></table></div>
+  </div>`);
+  app.appendChild(el);
+};
+
+/* ---------- Results ---------- */
+const filt = {q:'', tier:'', from:'', to:'', page:1};
+views.results = async (rest)=>{
+  if(rest[0]) return viewResult(rest[0]);
+  const qs = new URLSearchParams(Object.fromEntries(Object.entries(filt).filter(([k,v])=>v)));
+  const d = await api('results?'+qs.toString());
+  const cfgTiers = (await api('config')).cfg.tiers;
+  const pages = Math.max(1, Math.ceil(d.total/d.size));
+  const el = h(`<div class="main">
+    <h1 class="pg">ผลการประเมิน</h1><p class="pgsub">ทั้งหมด ${d.total.toLocaleString('th-TH')} รายการ</p>
+    <div class="card">
+      <form class="filters" id="ff">
+        <div class="field" style="flex:1;min-width:200px"><label>ค้นชื่อ / รหัส</label><input name="q" value="${esc(filt.q)}" placeholder="พิมพ์แล้วกด Enter"></div>
+        <div class="field"><label>กลุ่มเสี่ยง</label><select name="tier"><option value="">ทั้งหมด</option>${cfgTiers.map(t=>`<option value="${t.key}" ${filt.tier===t.key?'selected':''}>${esc(t.label)}</option>`).join('')}</select></div>
+        <div class="field"><label>ตั้งแต่</label><input type="date" name="from" value="${filt.from}"></div>
+        <div class="field"><label>ถึง</label><input type="date" name="to" value="${filt.to}"></div>
+        <button class="btn sm" type="submit">ค้นหา</button>
+        <button class="btn ghost sm" type="button" id="clear">ล้าง</button>
+        <button class="btn ghost sm" type="button" id="exp">⬇ ส่งออก CSV/Excel</button>
+      </form>
+      ${d.items.length ? `<table class="tbl"><thead><tr><th>รหัส</th><th>วันเวลา</th><th>ชื่อ</th><th>ธาตุเจ้าเรือน</th><th class="num">คะแนน</th><th class="num">สมดุล</th><th>กลุ่มเสี่ยง</th></tr></thead><tbody>
+        ${d.items.map(r=>`<tr><td><a href="#/results/${encodeURIComponent(r.id)}">${esc(r.id)}</a></td><td>${fmtDT(r.created_at)}</td><td>${esc(r.name||'—')}</td><td>${esc(r.dhatu||'—')}</td><td class="num">${r.total}/${r.max_score}</td><td class="num"><b>${r.balance}</b></td><td><span class="tag ${tierCls(r.tier_key)}">${esc(r.tier_label)}</span></td></tr>`).join('')}
+        </tbody></table>` : `<div class="empty">ไม่พบรายการ</div>`}
+      <div class="pager"><span>หน้า ${d.page} / ${pages}</span>
+        <button class="btn ghost sm" id="pp" ${d.page<=1?'disabled':''}>‹ ก่อนหน้า</button>
+        <button class="btn ghost sm" id="pn" ${d.page>=pages?'disabled':''}>ถัดไป ›</button></div>
+    </div></div>`);
+  el.querySelector('#ff').onsubmit = e=>{ e.preventDefault(); const fd=new FormData(e.target); Object.assign(filt,{q:fd.get('q').trim(),tier:fd.get('tier'),from:fd.get('from'),to:fd.get('to'),page:1}); route(); };
+  el.querySelector('#clear').onclick = ()=>{ Object.assign(filt,{q:'',tier:'',from:'',to:'',page:1}); route(); };
+  el.querySelector('#exp').onclick = ()=>{ const p=new URLSearchParams({tier:filt.tier,from:filt.from,to:filt.to}); location.href='../api/admin/export?'+p; };
+  el.querySelector('#pp').onclick = ()=>{ filt.page--; route(); };
+  el.querySelector('#pn').onclick = ()=>{ filt.page++; route(); };
+  app.appendChild(el);
+};
+
+async function viewResult(id){
+  const d = await api('results/'+encodeURIComponent(id));
+  const m = d.model;
+  const el = h(`<div class="main">
+    <div class="sheetbar no-print" style="padding:0 0 16px">
+      <a class="btn ghost" href="#/results">← กลับ</a>
+      <button class="btn" id="pr">บันทึกเป็น PDF / พิมพ์</button>
+      ${USER.role==='admin' ? '<button class="btn danger sm" id="del">ลบรายการนี้</button>' : ''}
+      <div class="note">${esc(m.id)} · ${fmtDT(m.createdAt)}</div>
+    </div>
+    <div class="sheetwrap"><div class="page">${sheetHTML(m)}</div></div>
+  </div>`);
+  el.querySelector('#pr').onclick = ()=>window.print();
+  const del = el.querySelector('#del');
+  if(del) del.onclick = async ()=>{
+    if(!confirm(`ลบรายการ ${m.id} ของ ${m.intake.name||'—'} ถาวร?`)) return;
+    await api('results/'+encodeURIComponent(m.id),{method:'DELETE'}); toast('ลบแล้ว'); location.hash='#/results';
+  };
+  app.appendChild(el);
+}
+
+/* ---------- Settings ---------- */
+views.settings = async ()=>{
+  if(USER.role!=='admin'){ location.hash='#/dashboard'; return; }
+  const d = await api('config');
+  const cfg = mergeCfg(d.cfg);
+  let dirty=false;
+  const el = h(`<div class="main">
+    <h1 class="pg">ตั้งค่าแบบประเมิน</h1><p class="pgsub">คำถาม เกณฑ์คะแนน การแปรผล ตารางกิจวัตร บริการ และหัวรายงาน · มีผลกับทุกเครื่องทันทีที่บันทึก</p>
+    <div class="savebar"><span class="dirty" id="dirty"></span><span class="muted" id="upd">${d.updatedAt?'บันทึกล่าสุด '+fmtDT(d.updatedAt):'ยังใช้ค่าเริ่มต้น'}</span>
+      <div class="sp"></div>
+      <button class="btn ghost sm" id="exportJ">ส่งออก JSON</button>
+      <button class="btn ghost sm" id="importJ">นำเข้า JSON</button>
+      <button class="btn sm" id="save" disabled>บันทึกการตั้งค่า</button>
+      <input type="file" id="file" accept="application/json" style="display:none"></div>
+    <div id="editorHost"></div>
+  </div>`);
+  const setDirty = v=>{ dirty=v; el.querySelector('#dirty').textContent = v?'● มีการเปลี่ยนแปลงที่ยังไม่บันทึก':''; el.querySelector('#save').disabled=!v; };
+  const editor = mountEditor(el.querySelector('#editorHost'), cfg, {onChange:()=>setDirty(true)});
+  el.querySelector('#save').onclick = async ()=>{
+    const b=el.querySelector('#save'); b.disabled=true; b.textContent='กำลังบันทึก…';
+    try{ const r=await api('config',{method:'PUT',body:{cfg}}); setDirty(false); el.querySelector('#upd').textContent='บันทึกล่าสุด '+fmtDT(r.updatedAt); toast('บันทึกการตั้งค่าแล้ว'); }
+    catch(err){ alert(err.message); setDirty(true); }
+    b.textContent='บันทึกการตั้งค่า';
+  };
+  el.querySelector('#exportJ').onclick = ()=>{
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'}));
+    a.download='ttm-survey-config.json'; a.click();
+  };
+  el.querySelector('#importJ').onclick = ()=>el.querySelector('#file').click();
+  el.querySelector('#file').onchange = e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ try{ Object.assign(cfg, mergeCfg(JSON.parse(r.result))); editor.setConfig(cfg); setDirty(true); toast('นำเข้าแล้ว กดบันทึกเพื่อใช้งาน'); }catch(err){ alert('ไฟล์ไม่ถูกต้อง: '+err.message) } };
+    r.readAsText(f); e.target.value='';
+  };
+  window.onbeforeunload = ()=> dirty ? true : undefined;
+  app.appendChild(el);
+};
+
+/* ---------- Users ---------- */
+views.users = async ()=>{
+  if(USER.role!=='admin'){ location.hash='#/dashboard'; return; }
+  const d = await api('users');
+  const el = h(`<div class="main">
+    <h1 class="pg">ผู้ใช้ระบบ</h1><p class="pgsub">ผู้ดูแลระบบแก้การตั้งค่าและลบข้อมูลได้ · เจ้าหน้าที่ดูข้อมูลและพิมพ์รายงานได้</p>
+    <div class="card"><table class="tbl"><thead><tr><th>อีเมล</th><th>ชื่อ</th><th>บทบาท</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead><tbody>
+      ${d.users.map(u=>`<tr data-email="${esc(u.email)}"><td>${esc(u.email)}</td><td>${esc(u.name||'—')}</td>
+        <td><select class="role" ${u.email===USER.email?'disabled':''}><option value="staff" ${u.role==='staff'?'selected':''}>เจ้าหน้าที่</option><option value="admin" ${u.role==='admin'?'selected':''}>ผู้ดูแลระบบ</option></select></td>
+        <td>${u.last_login?fmtDT(u.last_login):'—'}</td>
+        <td style="white-space:nowrap"><button class="btn ghost sm rp">รีเซ็ตรหัสผ่าน</button> ${u.email!==USER.email?'<button class="btn danger sm dl">ลบ</button>':''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="card"><h3>เพิ่มผู้ใช้</h3>
+      <form id="add" class="filters">
+        <div class="field"><label>ชื่อ</label><input name="name" required></div>
+        <div class="field"><label>อีเมล</label><input name="email" type="email" required></div>
+        <div class="field"><label>รหัสผ่านเริ่มต้น</label><input name="password" type="text" minlength="8" required></div>
+        <div class="field"><label>บทบาท</label><select name="role"><option value="staff">เจ้าหน้าที่</option><option value="admin">ผู้ดูแลระบบ</option></select></div>
+        <button class="btn sm" type="submit">เพิ่ม</button>
+      </form></div>
+  </div>`);
+  el.querySelectorAll('tr[data-email]').forEach(tr=>{
+    const email=tr.dataset.email;
+    tr.querySelector('.role').onchange = async e=>{ try{ await api('users/'+encodeURIComponent(email),{method:'PATCH',body:{role:e.target.value}}); toast('เปลี่ยนบทบาทแล้ว'); }catch(err){ alert(err.message); route(); } };
+    tr.querySelector('.rp').onclick = async ()=>{ const pw=prompt(`รหัสผ่านใหม่สำหรับ ${email} (อย่างน้อย 8 ตัวอักษร)`); if(!pw) return;
+      try{ await api('users/'+encodeURIComponent(email),{method:'PATCH',body:{password:pw}}); toast('รีเซ็ตรหัสผ่านแล้ว'); }catch(err){ alert(err.message) } };
+    const dl=tr.querySelector('.dl'); if(dl) dl.onclick = async ()=>{ if(!confirm(`ลบผู้ใช้ ${email}?`)) return;
+      try{ await api('users/'+encodeURIComponent(email),{method:'DELETE'}); toast('ลบแล้ว'); route(); }catch(err){ alert(err.message) } };
+  });
+  el.querySelector('#add').onsubmit = async e=>{ e.preventDefault();
+    try{ await api('users',{method:'POST',body:Object.fromEntries(new FormData(e.target).entries())}); toast('เพิ่มผู้ใช้แล้ว'); route(); }catch(err){ alert(err.message) } };
+  app.appendChild(el);
+};
+
+/* ---------- Account ---------- */
+views.account = async ()=>{
+  const el = h(`<div class="main"><h1 class="pg">บัญชีของฉัน</h1><p class="pgsub">${esc(USER.email)} · ${USER.role==='admin'?'ผู้ดูแลระบบ':'เจ้าหน้าที่'}</p>
+    <div class="card" style="max-width:460px"><h3>เปลี่ยนรหัสผ่าน</h3>
+      <form id="pw"><div class="field" style="margin-bottom:10px"><label>รหัสผ่านเดิม</label><input name="current" type="password" required autocomplete="current-password"></div>
+      <div class="field" style="margin-bottom:10px"><label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" minlength="8" required autocomplete="new-password"></div>
+      <div class="err" id="pwErr"></div><button class="btn" type="submit">เปลี่ยนรหัสผ่าน</button></form></div></div>`);
+  el.querySelector('#pw').onsubmit = async e=>{ e.preventDefault(); const er=el.querySelector('#pwErr'); er.textContent='';
+    try{ await api('password',{method:'POST',body:Object.fromEntries(new FormData(e.target).entries())}); toast('เปลี่ยนรหัสผ่านแล้ว'); e.target.reset(); }catch(err){ er.textContent=err.message } };
+  app.appendChild(el);
+};
+
+route();
+</script>
+</body>
+</html>

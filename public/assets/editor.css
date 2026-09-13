@@ -1,0 +1,35 @@
+/* editor.css — หน้าแก้ไขคำถามและผลลัพธ์ */
+/* ================= EDITOR ================= */
+.ed-tabs{display:flex; gap:6px; padding:0 0 14px; flex-wrap:wrap}
+.ed-tab{padding:8px 16px; border-radius:99px; border:1px solid var(--line); background:var(--surface);
+        font-size:14px; cursor:pointer; color:var(--ink-2)}
+.ed-tab.on{background:var(--olive); border-color:var(--olive); color:var(--on-olive); font-weight:600}
+.ed-body{padding:0 0 40px}
+.ed-pane{display:none}
+.ed-pane.on{display:block}
+.ed-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px}
+.ed-card > h3{margin:0 0 12px; font-size:16px; font-weight:800; display:flex; align-items:center; gap:10px}
+.ed-card > h3 .tag{font-size:12px; font-weight:600; padding:2px 10px; border-radius:99px; background:var(--cream-2); color:var(--ink-2)}
+.ed-row{display:grid; gap:10px; align-items:start; margin-bottom:10px}
+.ed-lab{font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:4px; display:block}
+.ed-body input[type=text],.ed-body input[type=number],.ed-body select,.ed-body textarea{
+  width:100%; padding:9px 11px; font-size:14.5px; border:1px solid var(--line);
+  border-radius:8px; background:var(--surface); color:var(--ink);
+}
+.ed-body textarea{resize:vertical; line-height:1.5}
+.ed-body input:focus,.ed-body select:focus,.ed-body textarea:focus{outline:2px solid #cfd3b6; outline-offset:1px; border-color:var(--olive)}
+.ed-item{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; background:var(--surface-2)}
+.ed-item .top{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.ed-item .top .n{font-weight:800; color:var(--olive-dark); font-size:14px}
+.ed-item .top .sp{margin-left:auto}
+.ico{width:30px; height:30px; border-radius:7px; border:1px solid var(--line); background:var(--surface);
+     cursor:pointer; font-size:14px; color:var(--ink-2); line-height:1}
+.ico:hover{background:var(--cream)}
+.ico.del:hover{background:var(--danger-bg); color:var(--red); border-color:var(--danger-line)}
+.hintbox{background:var(--hint-bg); border:1px dashed var(--line); border-radius:10px; padding:11px 14px;
+         font-size:13.5px; color:var(--ink-2); margin-bottom:14px}
+.saved{font-size:13.5px; color:var(--green); font-weight:600; opacity:0; transition:.3s}
+.saved.on{opacity:1}
+.cols3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+.cols2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+

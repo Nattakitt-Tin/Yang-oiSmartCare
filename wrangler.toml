@@ -1,0 +1,14 @@
+name = "ttm-yangoi"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ttm-yangoi"
+database_id = "REPLACE_AFTER_CREATE"
+migrations_dir = "migrations"
+
+# ตัวแปรที่ตั้งเป็น secret (ไม่เก็บในไฟล์นี้):
+#   SESSION_SECRET   — ใช้เซ็นคุกกี้ล็อกอิน   → wrangler pages secret put SESSION_SECRET
+#   SHEET_URL        — (ไม่บังคับ) URL Apps Script ถ้าอยากซิงก์ผลเข้า Google Sheet ด้วย
+#   SHEET_SECRET     — (ไม่บังคับ) รหัสลับของ Apps Script

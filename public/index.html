@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คลินิกการแพทย์แผนไทย รพ.สต.บ้านยางอ้อย — แบบประเมินสมดุลองค์รวม (ธรรมนามัย ๓)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="assets/sheet.css">
+<style>
+.consent{margin-top:22px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 18px;
+         display:flex; gap:12px; align-items:flex-start; font-size:14.5px; color:var(--ink-2); line-height:1.5}
+.consent input{margin-top:4px; width:18px; height:18px; flex:none; accent-color:var(--olive)}
+.loading{text-align:center; padding:80px 0; color:var(--muted)}
+.spinner{width:34px; height:34px; border:3px solid var(--track); border-top-color:var(--olive); border-radius:50%;
+         margin:0 auto 14px; animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="wizard">
+  <div class="wz">
+    <div class="wz-top">
+      <div class="wz-org" id="wzOrg"></div>
+      <div class="progress" id="wzProgress"></div>
+      <div class="wz-count" id="wzCount"></div>
+    </div>
+    <div class="wz-body">
+      <h1 class="wz-title" id="wzTitle"></h1>
+      <p class="wz-sub" id="wzSub"></p>
+      <div id="wzContent"><div class="loading"><div class="spinner"></div>กำลังโหลดแบบประเมิน…</div></div>
+    </div>
+    <div class="wz-nav">
+      <div class="left" id="wzLeft"></div>
+      <div class="sp"></div>
+      <button class="btn ghost" id="btnPrev" type="button">← ย้อนกลับ</button>
+      <button class="btn" id="btnNext" type="button" disabled>ถัดไป →</button>
+    </div>
+  </div>
+</div>
+
+<div id="reportView" style="display:none">
+  <div class="sheetbar no-print">
+    <button class="btn" id="btnPrint" type="button">บันทึกเป็น PDF / พิมพ์</button>
+    <button class="btn ghost" id="btnNew" type="button">เริ่มแบบประเมินใหม่</button>
+    <span class="savestat" id="saveStatus"></span>
+    <div class="note">ในหน้าต่างพิมพ์ เลือกปลายทาง <b>“บันทึกเป็น PDF”</b><br>ขนาด A4 · ปิด Headers and footers</div>
+  </div>
+  <div class="sheetwrap"><div class="page" id="sheet"></div></div>
+</div>
+
+<div id="fabs"><button id="theme" type="button" title="สลับเป็นโหมดมืด">☾</button></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { DEFAULT_CFG, MONTHS, DHATU, dhatuOfMonth, mergeCfg, qIdxOf, computeReport } from './assets/core.js';
+import { sheetHTML } from './assets/sheet.js';
+
+const $ = id => document.getElementById(id);
+let CFG = null, ans = [], step = 0;
+const intake = {name:'', month:'', dhatu:DHATU[0], consent:false};
+
+/* ---------- ธีม ---------- */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try{ localStorage.setItem('sk_theme', t) }catch{}
+  $('theme').textContent = t==='dark' ? '☀' : '☾';
+  $('theme').title = t==='dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด';
+}
+let savedTheme=null; try{ savedTheme=localStorage.getItem('sk_theme') }catch{}
+applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+$('theme').onclick = ()=> applyTheme(document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),3000); }
+
+/* ---------- โหลดการตั้งค่าจากเซิร์ฟเวอร์ (ถ้าล้มเหลวใช้ค่าเริ่มต้นในไฟล์) ---------- */
+async function loadConfig(){
+  try{
+    const r = await fetch('api/config', {cache:'no-store'});
+    const d = await r.json();
+    if(d.ok) return mergeCfg(d.cfg);
+  }catch{}
+  return structuredClone(DEFAULT_CFG);
+}
+
+/* ---------- Wizard ---------- */
+function resetAnswers(){ ans = new Array(CFG.questions.length).fill(null); }
+
+function renderWizard(){
+  const total = CFG.groups.length + 1;
+  $('wzOrg').textContent = CFG.org.brand;
+  const p=$('wzProgress'); p.innerHTML='';
+  for(let i=0;i<total;i++){ const b=document.createElement('i'); b.className=i<step?'done':i===step?'now':''; p.appendChild(b); }
+  $('wzCount').textContent = `ขั้นตอนที่ ${step+1} จาก ${total}`;
+  const c=$('wzContent'); c.innerHTML=''; c.onchange=null;
+
+  if(step===0){
+    $('wzTitle').textContent = CFG.org.intakeTitle;
+    $('wzSub').textContent   = CFG.org.intakeSub;
+    c.innerHTML = `
+      <div class="grid">
+        <div class="field"><label for="fName">ชื่อ – นามสกุล</label>
+          <input id="fName" type="text" placeholder="เช่น คุณวิภา รักษ์สุขภาพ" autocomplete="name" maxlength="120"></div>
+        <div class="field"><label for="fMonth">เดือนเกิด</label>
+          <select id="fMonth"><option value="">— ไม่ระบุ —</option>${MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}</select>
+          <div class="sub">ใช้คำนวณธาตุเจ้าเรือนตามตำราแพทย์แผนไทย</div></div>
+        <div class="field"><label for="fDhatu">ธาตุเจ้าเรือน</label>
+          <select id="fDhatu">${DHATU.map(d=>`<option>${d}</option>`).join('')}</select>
+          <div class="sub">เลือกเดือนเกิดแล้วระบบเติมให้ · ปรับแก้เองได้</div></div>
+      </div>
+      <div class="scalecard">
+        <h4>เกณฑ์การให้คะแนน (ข้อละ 0–${CFG.scale.length-1} คะแนน · ทั้งหมด ${CFG.questions.length} ข้อ)</h4>
+        <ul>${CFG.scale.map((s,i)=>`<li><b>${i} — ${s.s}</b> · ${s.d}</li>`).join('')}</ul>
+      </div>
+      <label class="consent"><input type="checkbox" id="fConsent"><span>${CFG.org.consent||''}</span></label>`;
+    $('fName').value=intake.name; $('fMonth').value=intake.month; $('fDhatu').value=intake.dhatu; $('fConsent').checked=intake.consent;
+    $('fName').oninput  = e=>intake.name=e.target.value;
+    $('fDhatu').onchange= e=>intake.dhatu=e.target.value;
+    $('fConsent').onchange = e=>{ intake.consent=e.target.checked; updateNav(); };
+    $('fMonth').onchange= e=>{ intake.month=e.target.value; if(e.target.value==='') return;
+      intake.dhatu=dhatuOfMonth(e.target.value); $('fDhatu').value=intake.dhatu; };
+    $('btnNext').textContent = 'เริ่มทำแบบประเมิน →';
+  }else{
+    const g = CFG.groups[step-1];
+    $('wzTitle').textContent = g.name; $('wzSub').textContent = g.sub;
+    c.innerHTML = qIdxOf(CFG,g.key).map(i=>`
+      <div class="q">
+        <div class="qt"><i>${i+1}.</i>${CFG.questions[i].t}</div>
+        <div class="opts">${CFG.scale.map((s,v)=>`
+          <label class="opt"><input type="radio" name="q${i}" value="${v}" ${ans[i]===v?'checked':''}>
+            <span><b>${v}</b>${s.s}<br>${s.d}</span></label>`).join('')}</div>
+      </div>`).join('');
+    c.onchange = e=>{ if(e.target.type!=='radio') return; ans[Number(e.target.name.slice(1))]=Number(e.target.value); updateNav(); };
+    $('btnNext').textContent = step===CFG.groups.length ? 'ดูผลการประเมิน →' : 'ถัดไป →';
+  }
+  $('btnPrev').style.visibility = step===0 ? 'hidden' : 'visible';
+  updateNav(); window.scrollTo(0,0);
+}
+
+function updateNav(){
+  if(step===0){ $('btnNext').disabled=!intake.consent; $('wzLeft').textContent = intake.consent?'':'กรุณายืนยันความยินยอมก่อนเริ่ม'; return; }
+  const idxs=qIdxOf(CFG,CFG.groups[step-1].key), done=idxs.filter(i=>ans[i]!==null).length;
+  $('wzLeft').textContent = done<idxs.length ? `ตอบแล้ว ${done} จาก ${idxs.length} ข้อในหมวดนี้` : 'ตอบครบทุกข้อในหมวดนี้แล้ว';
+  $('btnNext').disabled = done<idxs.length;
+}
+
+$('btnNext').onclick = ()=>{ if(step<CFG.groups.length){ step++; renderWizard(); } else finish(); };
+$('btnPrev').onclick = ()=>{ if(step>0){ step--; renderWizard(); } };
+
+/* ---------- ส่งผลและแสดงรายงาน ---------- */
+const Q_KEY='sk_queue';
+const qGet=()=>{ try{ return JSON.parse(localStorage.getItem(Q_KEY)||'[]') }catch{ return [] } };
+const qSet=q=>{ try{ localStorage.setItem(Q_KEY, JSON.stringify(q)) }catch{} };
+
+async function postSubmit(payload){
+  const r = await fetch('api/submit', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(payload)});
+  const d = await r.json().catch(()=>({ok:false,error:'ปลายทางตอบกลับผิดรูปแบบ'}));
+  if(!d.ok) throw new Error(d.error||'บันทึกไม่สำเร็จ');
+  return d;
+}
+
+async function finish(){
+  const payload = {answers:[...ans], intake:{name:intake.name.trim(), dhatu:intake.dhatu, month:intake.month}, consent:intake.consent};
+  $('btnNext').disabled=true; $('btnNext').textContent='กำลังประมวลผล…';
+  let model, status;
+  try{
+    const d = await postSubmit(payload);
+    model = d.model; status={k:'ok', t:'บันทึกผลเข้าระบบแล้ว ✓'};
+  }catch(err){
+    /* ออฟไลน์หรือเซิร์ฟเวอร์ขัดข้อง: คำนวณในเครื่อง เก็บคิวไว้ส่งซ้ำ */
+    model = computeReport(CFG, ans, intake, {id:'ออฟไลน์', date:new Date()});
+    const q=qGet(); q.push(payload); qSet(q);
+    status={k:'err', t:'บันทึกเข้าระบบไม่สำเร็จ ('+err.message+') — เก็บไว้ในเครื่องแล้ว จะส่งให้อัตโนมัติเมื่อกลับมาออนไลน์'};
+  }
+  showReport(model, status);
+}
+
+function showReport(model, status){
+  $('sheet').innerHTML = sheetHTML(model);
+  $('saveStatus').className='savestat '+status.k; $('saveStatus').textContent=status.t;
+  $('wizard').style.display='none'; $('reportView').style.display='block'; window.scrollTo(0,0);
+}
+
+async function flushQueue(){
+  const q=qGet(); if(!q.length) return;
+  const rest=[];
+  for(const p of q){ try{ await postSubmit(p) }catch{ rest.push(p) } }
+  qSet(rest);
+  if(q.length && !rest.length) toast('ส่งผลที่ค้างอยู่ '+q.length+' รายการเข้าระบบแล้ว');
+}
+
+$('btnPrint').onclick = ()=>window.print();
+$('btnNew').onclick = ()=>{
+  if(!confirm('เริ่มแบบประเมินใหม่ทั้งหมด? คำตอบและรายงานปัจจุบันจะถูกล้างทิ้ง')) return;
+  resetAnswers(); intake.name=''; intake.month=''; intake.dhatu=DHATU[0]; intake.consent=false;
+  $('reportView').style.display='none'; $('wizard').style.display='flex';
+  step=0; renderWizard();
+};
+
+/* ---------- เริ่ม ---------- */
+CFG = await loadConfig();
+resetAnswers();
+renderWizard();
+flushQueue();
+</script>
+</body>
+</html>

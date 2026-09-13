@@ -1,0 +1,27 @@
+{
+  "name": "ttm-yangoi",
+  "version": "1.0.0",
+  "description": "แบบประเมินสมดุลองค์รวม ธรรมนามัย ๓ — คลินิกการแพทย์แผนไทย รพ.สต.บ้านยางอ้อย",
+  "scripts": {
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public",
+    "db:migrate:local": "wrangler d1 migrations apply ttm-yangoi --local",
+    "db:migrate": "wrangler d1 migrations apply ttm-yangoi --remote"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nattakitt-Tin/sikharee-wellness.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Nattakitt-Tin/sikharee-wellness/issues"
+  },
+  "homepage": "https://github.com/Nattakitt-Tin/sikharee-wellness#readme",
+  "devDependencies": {
+    "wrangler": "^4.131.1"
+  },
+  "type": "module",
+  "private": true
+}
