@@ -19,8 +19,9 @@ export const onRequestGet = handler(async ({request, env}) => {
 
   const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM results ${W}`).bind(...args).first('n');
   const rows  = await env.DB.prepare(
-    `SELECT id,created_at,local_date,name,dhatu,total,max_score,balance,tier_key,tier_label
-     FROM results ${W} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+    `SELECT r.id,r.created_at,r.local_date,r.name,r.name_key,r.dhatu,r.total,r.max_score,r.balance,r.tier_key,r.tier_label,
+            (SELECT COUNT(*) FROM results x WHERE x.name_key=r.name_key AND r.name_key IS NOT NULL) AS visits
+     FROM results r ${W} ORDER BY r.created_at DESC LIMIT ? OFFSET ?`)
     .bind(...args, size, (page-1)*size).all();
 
   return json({ok:true, total, page, size, items: rows.results});

@@ -7,6 +7,15 @@ export const MONTHS = ['มกราคม','กุมภาพันธ์','�
                        'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 export const DHATU  = ['วาตะ (ลม)','ปิตตะ (ไฟ)','อาโป (น้ำ)','ปถวี (ดิน)'];
 
+/* คีย์สำหรับจับคู่ชื่อคนเดิม: ตัดคำนำหน้า ช่องว่าง และตัวอักษรพิเศษ */
+const PREFIX_RE = /^(คุณ|นาย|นางสาว|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง|พระ|ว่าที่\s*ร\.?ต\.?|ดร\.|นพ\.|พญ\.|ทพ\.|ทพญ\.|ภก\.|ภญ\.|mr\.?|mrs\.?|ms\.?|miss)\s*/i;
+export function nameKey(name){
+  let s = String(name||'').normalize('NFC').trim().toLowerCase();
+  s = s.replace(PREFIX_RE,'');
+  s = s.replace(/[\s\u200b.\-_/,]+/g,'');
+  return s;
+}
+
 /* ธาตุเจ้าเรือนตามเดือนเกิด (ตำราแพทย์แผนไทย) */
 export function dhatuOfMonth(m){
   const n=Number(m);

@@ -1,7 +1,7 @@
 /* POST /api/submit — รับคำตอบ คำนวณ ออกเลขที่ บันทึก แล้วส่ง model กลับ */
 import { handler, json, readJSON, fail, assertSameOrigin, clientIP } from '../_lib/http.js';
 import { getConfig, nextReportId } from '../_lib/db.js';
-import { computeReport, validateAnswers, localDate } from '../../public/assets/core.js';
+import { computeReport, validateAnswers, localDate, nameKey } from '../../public/assets/core.js';
 
 export const onRequestPost = handler(async ({request, env, waitUntil}) => {
   assertSameOrigin(request);
@@ -28,9 +28,9 @@ export const onRequestPost = handler(async ({request, env, waitUntil}) => {
   const elements = Object.fromEntries(model.elements.map(e=>[e.key, e.pct]));
 
   await env.DB.prepare(`INSERT INTO results
-      (id,created_at,local_date,name,dhatu,birth_month,total,max_score,balance,tier_key,tier_label,answers,domains,elements,model)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .bind(id, model.createdAt, localDate(now), intake.name||null, intake.dhatu||null,
+      (id,created_at,local_date,name,name_key,dhatu,birth_month,total,max_score,balance,tier_key,tier_label,answers,domains,elements,model)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .bind(id, model.createdAt, localDate(now), intake.name||null, intake.name?nameKey(intake.name):null, intake.dhatu||null,
           intake.month===''?null:Number(intake.month),
           model.total, model.max, model.balance, model.tier.key, model.tier.label,
           JSON.stringify(answers), JSON.stringify(domains), JSON.stringify(elements), JSON.stringify(model))

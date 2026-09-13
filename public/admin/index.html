@@ -75,7 +75,14 @@ table.tbl a{color:var(--olive-dark); font-weight:700; text-decoration:none}
 .field input,.field select{width:100%; padding:11px 13px; font-size:15px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--ink)}
 .field input:focus,.field select:focus{outline:2px solid #cfd3b6; outline-offset:1px; border-color:var(--olive)}
 .empty{text-align:center; color:var(--muted); padding:40px 0}
+tr.muted td{color:var(--muted)}
 .sheetwrap{padding:0 0 40px}
+@media print{
+  .main{max-width:none; padding:0}
+  .card{break-inside:avoid; border-color:#ccc}
+  h1.pg{font-size:20pt} p.pgsub{color:#555}
+  .tag.g,.tag.y,.tag.r{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -263,7 +270,9 @@ views.results = async (rest)=>{
         <button class="btn ghost sm" type="button" id="exp">⬇ ส่งออก CSV/Excel</button>
       </form>
       ${d.items.length ? `<table class="tbl"><thead><tr><th>รหัส</th><th>วันเวลา</th><th>ชื่อ</th><th>ธาตุเจ้าเรือน</th><th class="num">คะแนน</th><th class="num">สมดุล</th><th>กลุ่มเสี่ยง</th></tr></thead><tbody>
-        ${d.items.map(r=>`<tr><td><a href="#/results/${encodeURIComponent(r.id)}">${esc(r.id)}</a></td><td>${fmtDT(r.created_at)}</td><td>${esc(r.name||'—')}</td><td>${esc(r.dhatu||'—')}</td><td class="num">${r.total}/${r.max_score}</td><td class="num"><b>${r.balance}</b></td><td><span class="tag ${tierCls(r.tier_key)}">${esc(r.tier_label)}</span></td></tr>`).join('')}
+        ${d.items.map(r=>`<tr><td><a href="#/results/${encodeURIComponent(r.id)}">${esc(r.id)}</a></td><td>${fmtDT(r.created_at)}</td>
+          <td>${r.name_key ? `<a href="#/person/${encodeURIComponent(r.name_key)}" title="ดูประวัติทุกครั้ง">${esc(r.name)}</a>${r.visits>1?` <span class="tag" title="เคยทำ ${r.visits} ครั้ง">${r.visits} ครั้ง</span>`:''}` : '—'}</td>
+          <td>${esc(r.dhatu||'—')}</td><td class="num">${r.total}/${r.max_score}</td><td class="num"><b>${r.balance}</b></td><td><span class="tag ${tierCls(r.tier_key)}">${esc(r.tier_label)}</span></td></tr>`).join('')}
         </tbody></table>` : `<div class="empty">ไม่พบรายการ</div>`}
       <div class="pager"><span>หน้า ${d.page} / ${pages}</span>
         <button class="btn ghost sm" id="pp" ${d.page<=1?'disabled':''}>‹ ก่อนหน้า</button>
@@ -297,6 +306,82 @@ async function viewResult(id){
   };
   app.appendChild(el);
 }
+
+/* ---------- Person history ---------- */
+views.person = async (rest)=>{
+  const key = decodeURIComponent(rest[0]||'');
+  const d = await api('person?key='+encodeURIComponent(key));
+  const L=d.latest, P=d.previous, vs=d.visits;
+  const name = L.intake.name;
+
+  /* ค่าทิศทาง: lowerBetter = คะแนนน้อยดีกว่า */
+  const delta = (a,b,lowerBetter=true) => {
+    if(a==null||b==null) return {t:'—',c:''};
+    const df=b-a; if(df===0) return {t:'— เท่าเดิม',c:'muted'};
+    const better = lowerBetter ? df<0 : df>0;
+    return {t:`${better?'▲':'▼'} ${df>0?'+':''}${df} ${better?'ดีขึ้น':'แย่ลง'}`, c: better?'c-green':'c-red'};
+  };
+  const tierRank = k => ({green:0,yellow:1,red:2})[k] ?? 1;
+  const tDelta = P ? (tierRank(L.tier.key)<tierRank(P.tier.key) ? {t:'▲ ดีขึ้น',c:'c-green'} : tierRank(L.tier.key)>tierRank(P.tier.key) ? {t:'▼ แย่ลง',c:'c-red'} : {t:'— เท่าเดิม',c:'muted'}) : {t:'—',c:''};
+  const stRank = t => ['ปกติ','หย่อน','กำเริบเล็กน้อย','กำเริบ'].indexOf(t);
+  const eDelta = (pe,le) => { if(!pe) return {t:'—',c:''}; const a=stRank(pe.state.t), b=stRank(le.state.t); return a===b?{t:'— เท่าเดิม',c:'muted'}:b<a?{t:'▲ ดีขึ้น',c:'c-green'}:{t:'▼ แย่ลง',c:'c-red'}; };
+
+  const row = (label, pv, lv, dl) => `<tr><td>${label}</td><td class="num">${pv??'—'}</td><td class="num"><b>${lv}</b></td><td class="${dl.c}"><b>${dl.t}</b></td></tr>`;
+  const cmpRows = [
+    row('คะแนนสมดุล (เต็ม 100)', P?.balance, L.balance, delta(P?.balance, L.balance, false)),
+    row('คะแนนรวม', P?`${P.total}/${P.max}`:null, `${L.total}/${L.max}`, delta(P?.total, L.total)),
+    `<tr><td>กลุ่มเสี่ยง</td><td>${P?`<span class="tag ${tierCls(P.tier.key)}">${esc(P.tier.label)}</span>`:'—'}</td><td><span class="tag ${tierCls(L.tier.key)}">${esc(L.tier.label)}</span></td><td class="${tDelta.c}"><b>${tDelta.t}</b></td></tr>`,
+    ...L.domains.map((dm,i)=>{ const pd=P?.domains.find(x=>x.key===dm.key); return row(dm.name, pd?`${pd.score}/${pd.max}`:null, `${dm.score}/${dm.max}`, delta(pd?.score, dm.score)); }),
+    ...L.elements.map(el=>{ const pe=P?.elements.find(x=>x.key===el.key); return row(el.name, pe?.state.t, el.state.t, eDelta(pe, el)); }),
+    row('ระดับความเครียด', P?`${P.stress.txt} (${P.stress.pct}%)`:null, `${L.stress.txt} (${L.stress.pct}%)`, delta(P?.stress.pct, L.stress.pct)),
+    row('คุณภาพการนอน', P?.sleep.txt, L.sleep.txt, P?delta(P.sleep.lv, L.sleep.lv):{t:'—',c:''})
+  ].join('');
+
+  const qRows = L.answers.map((v,i)=>{
+    const pv = P?.answers[i]; const dl = delta(pv, v);
+    return `<tr class="${pv!=null&&pv!==v?'':'muted'}"><td>${i+1}</td><td>${esc(d.questions[i]||'')}</td><td class="num">${pv??'—'}</td><td class="num"><b>${v}</b></td><td class="${dl.c}"><b>${dl.t}</b></td></tr>`;
+  }).join('');
+
+  /* กราฟแนวโน้มคะแนนสมดุล */
+  const W=600,H=120,pad=20, n=vs.length;
+  const xs = i => n===1 ? W/2 : pad + i*(W-2*pad)/(n-1);
+  const ys = b => H - pad - (b/100)*(H-2*pad);
+  const pts = vs.map((v,i)=>`${xs(i).toFixed(1)},${ys(v.balance).toFixed(1)}`).join(' ');
+  const trend = `<svg class="series" viewBox="0 0 ${W} ${H+18}" preserveAspectRatio="none" style="height:170px">
+    <line x1="${pad}" y1="${ys(0)}" x2="${W-pad}" y2="${ys(0)}"/><line x1="${pad}" y1="${ys(50)}" x2="${W-pad}" y2="${ys(50)}" stroke-dasharray="4 4"/><line x1="${pad}" y1="${ys(100)}" x2="${W-pad}" y2="${ys(100)}"/>
+    <text x="2" y="${ys(100)+4}">100</text><text x="6" y="${ys(50)+4}">50</text><text x="10" y="${ys(0)+4}">0</text>
+    ${n>1?`<polyline points="${pts}" fill="none" stroke="var(--olive)" stroke-width="2.5" stroke-linejoin="round"/>`:''}
+    ${vs.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v.balance)}" r="5" fill="var(--${v.tier_key==='green'?'green':v.tier_key==='yellow'?'amber':'red'})"><title>${v.id} · ${fmtDT(v.created_at)} · ${v.balance}</title></circle>
+      <text x="${xs(i)}" y="${H+14}" text-anchor="middle">${v.local_date.slice(5).replace('-','/')}</text>`).join('')}
+  </svg>`;
+
+  const el = h(`<div class="main">
+    <div class="sheetbar no-print" style="padding:0 0 12px">
+      <a class="btn ghost" href="#/results">← กลับ</a>
+      <button class="btn" id="pr">พิมพ์ใบสรุปความก้าวหน้า</button>
+      <div class="note">จับคู่จากชื่อ (ตัดคำนำหน้า/ช่องว่าง) · ชื่อซ้ำกันคนละคนอาจปนกัน</div>
+    </div>
+    <h1 class="pg">${esc(name)}</h1>
+    <p class="pgsub">เคยประเมิน ${n} ครั้ง · ครั้งแรก ${fmtDT(vs[0].created_at)} · ล่าสุด ${fmtDT(L.createdAt)}${L.intake.dhatu?' · ธาตุเจ้าเรือน '+esc(L.intake.dhatu):''}</p>
+
+    <div class="card"><h3>${P ? `ครั้งล่าสุด (${fmtDT(L.createdAt)}) เทียบกับครั้งก่อน (${fmtDT(P.createdAt)})` : 'ครั้งล่าสุด — ยังไม่มีครั้งก่อนหน้าให้เทียบ'}</h3>
+      <table class="tbl"><thead><tr><th>รายการ</th><th class="num">ครั้งก่อน</th><th class="num">ล่าสุด</th><th>เปลี่ยนแปลง</th></tr></thead><tbody>${cmpRows}</tbody></table>
+    </div>
+
+    <div class="card"><h3>คำตอบรายข้อ ${P?'(แถวจางคือข้อที่ไม่เปลี่ยน)':''}</h3>
+      <table class="tbl"><thead><tr><th>ข้อ</th><th>คำถาม</th><th class="num">ก่อน</th><th class="num">ล่าสุด</th><th>เปลี่ยนแปลง</th></tr></thead><tbody>${qRows}</tbody></table>
+    </div>
+
+    <div class="card"><h3>แนวโน้มคะแนนสมดุล (ยิ่งสูงยิ่งดี)</h3>${trend}</div>
+
+    <div class="card no-print"><h3>ประวัติทั้งหมด</h3>
+      <table class="tbl"><thead><tr><th>ครั้งที่</th><th>รหัส</th><th>วันเวลา</th><th class="num">คะแนน</th><th class="num">สมดุล</th><th>กลุ่มเสี่ยง</th></tr></thead><tbody>
+      ${[...vs].reverse().map((v,i)=>`<tr><td>${n-i}</td><td><a href="#/results/${encodeURIComponent(v.id)}">${esc(v.id)}</a></td><td>${fmtDT(v.created_at)}</td><td class="num">${v.total}/${v.max_score}</td><td class="num"><b>${v.balance}</b></td><td><span class="tag ${tierCls(v.tier_key)}">${esc(v.tier_label)}</span></td></tr>`).join('')}
+      </tbody></table></div>
+  </div>`);
+  el.querySelector('#pr').onclick = ()=>window.print();
+  app.appendChild(el);
+};
 
 /* ---------- Settings ---------- */
 views.settings = async ()=>{

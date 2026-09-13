@@ -4,7 +4,7 @@ pages_build_output_dir = "public"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "yang-oismartcare"
+database_name = "ttm-yangoi"
 database_id = "ab1ddd78-50d0-401d-830d-fe06bd2d84e4"
 migrations_dir = "migrations"
 
