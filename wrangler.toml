@@ -1,10 +1,10 @@
-name = "ttm-yangoi"
+name = "yang-oismartcare"
 compatibility_date = "2026-09-01"
 pages_build_output_dir = "public"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "ttm-yangoi"
+database_name = "yang-oismartcare"
 database_id = "ab1ddd78-50d0-401d-830d-fe06bd2d84e4"
 migrations_dir = "migrations"
 

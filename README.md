@@ -1,4 +1,6 @@
-# แบบประเมินสมดุลองค์รวม — คลินิกการแพทย์แผนไทย รพ.สต.บ้านยางอ้อย
+# Yang-oiSmartCare — แบบประเมินสมดุลองค์รวม
+
+คลินิกการแพทย์แผนไทย รพ.สต.บ้านยางอ้อย · https://yang-oismartcare.pages.dev/
 
 เว็บแบบสอบถามประเมินสุขภาพตามหลัก **ธรรมนามัย ๓** (กายานามัย / จิตตานามัย / ชีวิตานามัย)
 พร้อมรายงานวิเคราะห์ธาตุ ๔ บันทึกเป็น PDF ขนาด A4 หน้าเดียว และระบบหลังบ้านสำหรับเจ้าหน้าที่
@@ -50,22 +52,22 @@ apps-script/Code.gs     ← (ไม่บังคับ) ซิงก์ผล�
 ```bash
 npm install
 npx wrangler login                                  # เปิดเบราว์เซอร์ให้อนุญาต
-npx wrangler d1 create ttm-yangoi                   # คัดลอก database_id ที่ได้ไปใส่ใน wrangler.toml
+npx wrangler d1 create ttm-yangoi                   # คัดลอก database_id ที่ได้ไปใส่ใน wrangler.toml (ชื่อ DB ภายใน คงไว้ได้)
 npx wrangler d1 migrations apply ttm-yangoi --remote
-npx wrangler pages project create ttm-yangoi --production-branch main
-npx wrangler pages secret put SESSION_SECRET        # ใส่ข้อความสุ่มยาวๆ เช่นจาก: openssl rand -hex 32
+npx wrangler pages project create yang-oismartcare --production-branch main
+npx wrangler pages secret put SESSION_SECRET --project-name yang-oismartcare   # ใส่ข้อความสุ่มยาวๆ เช่นจาก: openssl rand -hex 32
 npm run deploy
 ```
 
-ได้ URL `https://ttm-yangoi.pages.dev` แล้วเปิด `/admin/` เพื่อสร้างบัญชีแรก
+ได้ URL `https://yang-oismartcare.pages.dev` แล้วเปิด `/admin/` เพื่อสร้างบัญชีแรก
 
 **อัปเดตครั้งถัดไป**: แก้โค้ดแล้ว `npm run deploy` (ถ้าแก้ `migrations/` ให้รัน `npm run db:migrate` ก่อน)
 
 ### ซิงก์ไป Google Sheet ด้วย (ไม่บังคับ)
 ติดตั้ง `apps-script/Code.gs` ตามคอมเมนต์ในไฟล์ แล้วตั้ง secret สองตัว:
 ```bash
-npx wrangler pages secret put SHEET_URL       # URL ของ Web App ที่ลงท้าย /exec
-npx wrangler pages secret put SHEET_SECRET    # ให้ตรงกับ SECRET ใน Code.gs
+npx wrangler pages secret put SHEET_URL --project-name yang-oismartcare      # URL ของ Web App ที่ลงท้าย /exec
+npx wrangler pages secret put SHEET_SECRET --project-name yang-oismartcare   # ให้ตรงกับ SECRET ใน Code.gs
 ```
 ทุกครั้งที่มีการประเมิน ระบบจะต่อท้ายชีตให้โดยไม่ทำให้คนไข้ต้องรอ
 
