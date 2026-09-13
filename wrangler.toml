@@ -5,7 +5,7 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "DB"
 database_name = "ttm-yangoi"
-database_id = "REPLACE_AFTER_CREATE"
+database_id = "ab1ddd78-50d0-401d-830d-fe06bd2d84e4"
 migrations_dir = "migrations"
 
 # ตัวแปรที่ตั้งเป็น secret (ไม่เก็บในไฟล์นี้):
